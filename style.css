@@ -316,6 +316,19 @@ body {
 }
 .score-games .material-symbols-rounded { font-size: 20px; }
 #games-count { font-size: 0.85rem; font-weight: 700; line-height: 1; }
+.use-game-btn {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 8px;
+  color: rgba(255,255,255,0.5);
+  cursor: pointer;
+  width: 22px; height: 22px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, color 0.15s;
+  padding: 0;
+}
+.use-game-btn .material-symbols-rounded { font-size: 14px; }
+.use-game-btn:hover { background: rgba(239,68,68,0.25); border-color: #ef4444; color: #fca5a5; }
 .score-games.pulse { animation: games-pulse 0.5s ease-out; }
 @keyframes games-pulse {
   0%   { transform: scale(1); }
