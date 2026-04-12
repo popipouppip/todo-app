@@ -270,8 +270,79 @@ function closeDetail()         { document.getElementById('detail-modal').classLi
 function closeDetailOutside(e) { if (e.target.id === 'detail-modal') closeDetail(); }
 
 function deleteDetail() {
-  tasks.splice(detailIdx, 1);
-  save(); render(); closeDetail();
+  const idx  = detailIdx;
+  const t    = tasks[idx];
+  const el   = bubbleEls.get(t.id);
+  const cfg  = CONFIG[t.type];
+  closeDetail();
+  explode(t.x, t.y, cfg.color, cfg.size, idx);
+  if (el) el.classList.add('exploding');
+  setTimeout(() => {
+    tasks.splice(idx, 1);
+    save(); render();
+  }, 320);
+}
+
+function explode(x, y, color, size, srcIdx) {
+  // Ударная волна на шарики
+  tasks.forEach((t, i) => {
+    if (i === srcIdx) return;
+    const dx = t.x - x, dy = t.y - y;
+    const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+    const force = Math.min((size * 180) / (dist * dist), 4.5);
+    t.vx += (dx / dist) * force;
+    t.vy += (dy / dist) * force;
+  });
+
+  const s = size;
+
+  // Кольцо
+  const ring = document.createElement('div');
+  ring.className = 'expl-ring';
+  ring.style.cssText = `left:${x}px;top:${y}px;width:${s}px;height:${s}px;--c:${color};`;
+  document.body.appendChild(ring);
+  setTimeout(() => ring.remove(), 600);
+
+  // Второе кольцо чуть позже
+  setTimeout(() => {
+    const r2 = document.createElement('div');
+    r2.className = 'expl-ring';
+    r2.style.cssText = `left:${x}px;top:${y}px;width:${s*0.7}px;height:${s*0.7}px;--c:${color};animation-duration:0.45s;`;
+    document.body.appendChild(r2);
+    setTimeout(() => r2.remove(), 500);
+  }, 80);
+
+  // Вспышка
+  const flash = document.createElement('div');
+  flash.className = 'expl-flash';
+  flash.style.cssText = `left:${x}px;top:${y}px;width:${s}px;height:${s}px;--c:${color};`;
+  document.body.appendChild(flash);
+  setTimeout(() => flash.remove(), 450);
+
+  // Частицы
+  const count = 14;
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    p.className = 'expl-particle';
+    const angle = (i / count) * 360 + Math.random() * 15;
+    const dist  = s * 0.6 + Math.random() * s * 0.8;
+    const pSize = 3 + Math.random() * 5;
+    const dur   = 0.5 + Math.random() * 0.35;
+    p.style.cssText = `left:${x}px;top:${y}px;width:${pSize}px;height:${pSize}px;--c:${color};--a:${angle}deg;--dist:${dist}px;--dur:${dur}s;`;
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), dur * 1000 + 50);
+  }
+
+  // Искры (тонкие, длинные)
+  for (let i = 0; i < 8; i++) {
+    const p = document.createElement('div');
+    p.className = 'expl-particle';
+    const angle = Math.random() * 360;
+    const dist  = s * 1.2 + Math.random() * s;
+    p.style.cssText = `left:${x}px;top:${y}px;width:2px;height:2px;--c:#fff;--a:${angle}deg;--dist:${dist}px;--dur:${0.6+Math.random()*0.3}s;`;
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 950);
+  }
 }
 
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeDetail(); } });
