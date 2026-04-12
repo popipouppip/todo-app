@@ -92,41 +92,110 @@ body {
 }
 
 .bubble-inner {
-  padding: 10px; line-height: 1.35; overflow: hidden;
-  word-break: break-word; max-height: 100%; pointer-events: none;
+  padding: 12px;
+  font-weight: 800;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  line-height: 1.3;
+  overflow: hidden;
+  word-break: break-word;
+  max-height: 100%;
+  pointer-events: none;
+  color: rgba(255,255,255,0.93);
 }
-.bubble.done .bubble-inner { text-decoration: line-through; opacity: 0.38; }
+.bubble.done .bubble-inner { text-decoration: line-through; opacity: 0.3; }
 
-.bubble.critical {
-  background: radial-gradient(circle at 35% 30%, #9b2c2c, #450a0a);
-  border: 1.5px solid rgba(239,68,68,0.7);
-  box-shadow: 0 0 28px #ef444455, 0 0 70px #ef444420, inset 0 1px 0 rgba(255,180,180,0.2);
-}
-.bubble.important {
-  background: radial-gradient(circle at 35% 30%, #92400e, #3d1a03);
-  border: 1.5px solid rgba(245,158,11,0.7);
-  box-shadow: 0 0 24px #f59e0b45, 0 0 60px #f59e0b18, inset 0 1px 0 rgba(255,220,150,0.2);
-}
-.bubble.low {
-  background: radial-gradient(circle at 35% 30%, #166534, #052e16);
-  border: 1.5px solid rgba(34,197,94,0.7);
-  box-shadow: 0 0 22px #22c55e40, 0 0 55px #22c55e15, inset 0 1px 0 rgba(150,255,180,0.2);
-}
-.bubble.nodate {
-  background: radial-gradient(circle at 35% 30%, #3730a3, #1e1b4b);
-  border: 1.5px solid rgba(129,140,248,0.7);
-  box-shadow: 0 0 22px #818cf840, 0 0 55px #818cf815, inset 0 1px 0 rgba(200,200,255,0.2);
-}
-
-/* Блик на пузыре */
+/* Внутреннее кольцо — как циферблат часов */
 .bubble::before {
   content: '';
   position: absolute;
-  top: 10%; left: 15%;
-  width: 35%; height: 25%;
-  background: radial-gradient(ellipse, rgba(255,255,255,0.18), transparent);
+  inset: 8px;
   border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.07);
   pointer-events: none;
+  z-index: 1;
+}
+/* Внешний ореол */
+.bubble::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.04);
+  pointer-events: none;
+}
+
+.bubble.critical {
+  background:
+    radial-gradient(circle at 50% 50%, #1c0505 0%, #0a0000 100%);
+  border: 1.5px solid #ef4444;
+  box-shadow:
+    0 0 0 4px rgba(239,68,68,0.06),
+    0 0 30px rgba(239,68,68,0.18),
+    0 16px 40px rgba(0,0,0,0.7),
+    inset 0 0 40px rgba(0,0,0,0.5);
+}
+.bubble.critical:hover {
+  box-shadow:
+    0 0 0 4px rgba(239,68,68,0.12),
+    0 0 50px rgba(239,68,68,0.3),
+    0 16px 40px rgba(0,0,0,0.7),
+    inset 0 0 40px rgba(0,0,0,0.5);
+}
+
+.bubble.important {
+  background:
+    radial-gradient(circle at 50% 50%, #180d00 0%, #090400 100%);
+  border: 1.5px solid #f59e0b;
+  box-shadow:
+    0 0 0 4px rgba(245,158,11,0.06),
+    0 0 28px rgba(245,158,11,0.16),
+    0 16px 40px rgba(0,0,0,0.7),
+    inset 0 0 40px rgba(0,0,0,0.5);
+}
+.bubble.important:hover {
+  box-shadow:
+    0 0 0 4px rgba(245,158,11,0.12),
+    0 0 45px rgba(245,158,11,0.28),
+    0 16px 40px rgba(0,0,0,0.7),
+    inset 0 0 40px rgba(0,0,0,0.5);
+}
+
+.bubble.low {
+  background:
+    radial-gradient(circle at 50% 50%, #021408 0%, #000a03 100%);
+  border: 1.5px solid #22c55e;
+  box-shadow:
+    0 0 0 4px rgba(34,197,94,0.06),
+    0 0 26px rgba(34,197,94,0.15),
+    0 16px 40px rgba(0,0,0,0.7),
+    inset 0 0 40px rgba(0,0,0,0.5);
+}
+.bubble.low:hover {
+  box-shadow:
+    0 0 0 4px rgba(34,197,94,0.12),
+    0 0 42px rgba(34,197,94,0.26),
+    0 16px 40px rgba(0,0,0,0.7),
+    inset 0 0 40px rgba(0,0,0,0.5);
+}
+
+.bubble.nodate {
+  background:
+    radial-gradient(circle at 50% 50%, #07051a 0%, #020110 100%);
+  border: 1.5px solid #818cf8;
+  box-shadow:
+    0 0 0 4px rgba(129,140,248,0.06),
+    0 0 26px rgba(129,140,248,0.15),
+    0 16px 40px rgba(0,0,0,0.7),
+    inset 0 0 40px rgba(0,0,0,0.5);
+}
+.bubble.nodate:hover {
+  box-shadow:
+    0 0 0 4px rgba(129,140,248,0.12),
+    0 0 42px rgba(129,140,248,0.26),
+    0 16px 40px rgba(0,0,0,0.7),
+    inset 0 0 40px rgba(0,0,0,0.5);
 }
 
 /* Модалка */

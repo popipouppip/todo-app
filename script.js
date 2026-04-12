@@ -225,7 +225,7 @@ function render() {
 
     const inner = document.createElement('div');
     inner.className = 'bubble-inner';
-    inner.style.fontSize = size > 100 ? '0.83rem' : size > 80 ? '0.76rem' : '0.69rem';
+    inner.style.fontSize = size > 100 ? '0.78rem' : size > 80 ? '0.71rem' : '0.64rem';
     inner.textContent = t.text;
     b.appendChild(inner);
 
