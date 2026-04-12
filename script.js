@@ -304,12 +304,15 @@ function openDetail(i) {
 }
 
 function toggleDetailDone() {
-  const t = tasks[detailIdx];
-  if (!t.done) {
-    t.done = true;
-    earnPoints(t.type);
-    save(); render(); openDetail(detailIdx);
-  }
+  const idx = detailIdx;
+  const t   = tasks[idx];
+  const el  = bubbleEls.get(t.id);
+  const cfg = CONFIG[t.type];
+  closeDetail();
+  earnPoints(t.type);
+  explode(t.x, t.y, cfg.color, cfg.size, idx);
+  if (el) el.classList.add('exploding');
+  setTimeout(() => { tasks.splice(idx, 1); save(); render(); }, 320);
 }
 function closeDetail()         { document.getElementById('detail-modal').classList.remove('open'); detailIdx = null; }
 function closeDetailOutside(e) { if (e.target.id === 'detail-modal') closeDetail(); }
