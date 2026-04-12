@@ -41,6 +41,20 @@
     </div>
   </div>
 
+  <!-- Модалка деталей -->
+  <div class="modal-overlay" id="detail-modal" onclick="closeDetailOutside(event)">
+    <div class="modal detail-modal">
+      <div class="modal-dot" id="detail-dot"></div>
+      <div class="detail-type" id="detail-type"></div>
+      <p class="detail-text" id="detail-text"></p>
+      <div class="modal-btns">
+        <button class="btn-cancel" onclick="closeDetail()">Закрыть</button>
+        <button class="btn-done" id="btn-done" onclick="toggleDetailDone()">✓ Выполнено</button>
+        <button class="btn-delete" onclick="deleteDetail()">Удалить</button>
+      </div>
+    </div>
+  </div>
+
   <script src="script.js"></script>
 </body>
 </html>

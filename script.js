@@ -57,19 +57,12 @@ function render() {
     inner.style.fontSize = size > 100 ? '0.82rem' : size > 80 ? '0.75rem' : '0.68rem';
     inner.textContent = t.text;
 
-    const del = document.createElement('button');
-    del.className = 'bubble-del';
-    del.textContent = '×';
-    del.onclick = (e) => { e.stopPropagation(); tasks.splice(i, 1); save(); render(); };
-
     b.appendChild(inner);
-    b.appendChild(del);
 
-    // Клик = toggle done
-    b.addEventListener('click', (e) => {
-      if (Math.abs(dragOffX) < 3 && Math.abs(dragOffY) < 3) {
-        tasks[i].done = !tasks[i].done;
-        save(); render();
+    // Клик = открыть детали
+    b.addEventListener('click', () => {
+      if (Math.abs(dragOffX) < 5 && Math.abs(dragOffY) < 5) {
+        openDetail(i);
       }
     });
 
@@ -173,6 +166,44 @@ function saveTask() {
 document.getElementById('task-text').addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); saveTask(); }
 });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeModal(); closeDetail(); }
+});
+
+// Детали задачи
+let detailIdx = null;
+
+function openDetail(i) {
+  detailIdx = i;
+  const t = tasks[i];
+  const cfg = CONFIG[t.type];
+  const overlay = document.getElementById('detail-modal');
+  overlay.style.setProperty('--modal-color', cfg.color);
+  document.getElementById('detail-dot').style.cssText = `background:${cfg.color};box-shadow:0 0 10px ${cfg.color};`;
+  document.getElementById('detail-type').textContent = cfg.label;
+  document.getElementById('detail-text').textContent = t.text;
+  const btn = document.getElementById('btn-done');
+  btn.textContent = t.done ? '↩ Снять отметку' : '✓ Выполнено';
+  btn.classList.toggle('active', t.done);
+  overlay.classList.add('open');
+}
+
+function closeDetail() {
+  document.getElementById('detail-modal').classList.remove('open');
+  detailIdx = null;
+}
+
+function closeDetailOutside(e) { if (e.target.id === 'detail-modal') closeDetail(); }
+
+function toggleDetailDone() {
+  tasks[detailIdx].done = !tasks[detailIdx].done;
+  save(); render();
+  openDetail(detailIdx);
+}
+
+function deleteDetail() {
+  tasks.splice(detailIdx, 1);
+  save(); render(); closeDetail();
+}
 
 render();
