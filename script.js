@@ -4,14 +4,22 @@ const CONFIG = {
   low:       { label: 'Не очень',     color: '#22c55e', size: 78  },
   nodate:    { label: 'Без срока',    color: '#818cf8', size: 72  },
 };
-const COLS = Object.keys(CONFIG);
-const GAP  = 10; // отступ между пузырями
+const COLS    = Object.keys(CONFIG);
+const GAP     = 8;       // зазор между шариками
+const SPEED   = 0.35;    // начальная скорость (px/frame)
+const DAMP    = 0.992;   // затухание
+const BOUNCE  = 0.6;     // отскок от стен
 
-let tasks = JSON.parse(localStorage.getItem('bubbleTasks') || '[]');
+let tasks     = JSON.parse(localStorage.getItem('bubbleTasks') || '[]');
 let activeCol = null;
-let dragging  = null;   // { idx, startMouseX, startMouseY, startTaskX, startTaskY }
-let bubbleEls = new Map(); // id -> DOM element
+let dragging  = null;
+let bubbleEls = new Map();
 let animFrame = null;
+
+// Добавляем скорости существующим задачам из localStorage
+tasks.forEach(t => {
+  if (t.vx === undefined) { t.vx = (Math.random() - 0.5) * SPEED * 2; t.vy = (Math.random() - 0.5) * SPEED * 2; }
+});
 
 // ── Звёзды ──
 (function () {
@@ -25,44 +33,75 @@ let animFrame = null;
   }
 })();
 
-function save() { localStorage.setItem('bubbleTasks', JSON.stringify(tasks)); }
+function save() {
+  // Сохраняем без vx/vy — они временные
+  const clean = tasks.map(({ vx, vy, ...rest }) => rest);
+  localStorage.setItem('bubbleTasks', JSON.stringify(clean));
+}
 
 function clamp(t) {
   const r = CONFIG[t.type].size / 2;
-  t.x = Math.max(r + 4, Math.min(window.innerWidth  - r - 4, t.x));
-  t.y = Math.max(r + 60, Math.min(window.innerHeight - r - 90, t.y));
+  const minX = r + 4,    maxX = window.innerWidth  - r - 4;
+  const minY = r + 60,   maxY = window.innerHeight - r - 90;
+  if (t.x < minX) { t.x = minX; t.vx = Math.abs(t.vx) * BOUNCE; }
+  if (t.x > maxX) { t.x = maxX; t.vx = -Math.abs(t.vx) * BOUNCE; }
+  if (t.y < minY) { t.y = minY; t.vy = Math.abs(t.vy) * BOUNCE; }
+  if (t.y > maxY) { t.y = maxY; t.vy = -Math.abs(t.vy) * BOUNCE; }
 }
 
 function randPos(type) {
   const r = CONFIG[type].size / 2;
   return {
-    x: r + 20 + Math.random() * (window.innerWidth  - (r + 20) * 2),
-    y: r + 70 + Math.random() * (window.innerHeight - (r + 70) - 110),
+    x: r + 30 + Math.random() * (window.innerWidth  - (r + 30) * 2),
+    y: r + 80 + Math.random() * (window.innerHeight - (r + 80) - 120),
   };
 }
 
-// ── Физика: разрешение перекрытий ──
-function resolveCollisions() {
+// ── Физика ──
+function physics() {
   const n = tasks.length;
-  for (let iter = 0; iter < 4; iter++) {          // 4 итерации для устойчивости
-    for (let i = 0; i < n; i++) {
-      for (let j = i + 1; j < n; j++) {
-        const a = tasks[i], b = tasks[j];
-        const ra = CONFIG[a.type].size / 2 + GAP;
-        const rb = CONFIG[b.type].size / 2 + GAP;
-        const minDist = ra + rb;
-        const dx = b.x - a.x, dy = b.y - a.y;
-        const dist = Math.sqrt(dx*dx + dy*dy) || 0.001;
-        if (dist >= minDist) continue;
 
-        const overlap = (minDist - dist) * 0.5;
-        const nx = dx / dist, ny = dy / dist;
-        const fixA = dragging?.idx === i;
-        const fixB = dragging?.idx === j;
+  // Двигаем шарики
+  tasks.forEach((t, i) => {
+    if (dragging?.idx === i) return;
+    t.x  += t.vx;
+    t.y  += t.vy;
+    t.vx *= DAMP;
+    t.vy *= DAMP;
+    // Случайный импульс чтобы не замирали
+    if (Math.random() < 0.004) { t.vx += (Math.random() - 0.5) * 0.3; t.vy += (Math.random() - 0.5) * 0.3; }
+    clamp(t);
+  });
 
-        if (!fixA) { a.x -= nx * overlap * (fixB ? 2 : 1); a.y -= ny * overlap * (fixB ? 2 : 1); clamp(a); }
-        if (!fixB) { b.x += nx * overlap * (fixA ? 2 : 1); b.y += ny * overlap * (fixA ? 2 : 1); clamp(b); }
-      }
+  // Столкновения — упругий удар
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      const a = tasks[i], b = tasks[j];
+      const ra = CONFIG[a.type].size / 2 + GAP;
+      const rb = CONFIG[b.type].size / 2 + GAP;
+      const minDist = ra + rb;
+      const dx = b.x - a.x, dy = b.y - a.y;
+      const dist = Math.sqrt(dx*dx + dy*dy) || 0.001;
+      if (dist >= minDist) continue;
+
+      // Развести шарики
+      const overlap = (minDist - dist) * 0.5;
+      const nx = dx / dist, ny = dy / dist;
+      const fixA = dragging?.idx === i;
+      const fixB = dragging?.idx === j;
+      if (!fixA) { a.x -= nx * overlap * (fixB ? 2 : 1); a.y -= ny * overlap * (fixB ? 2 : 1); }
+      if (!fixB) { b.x += nx * overlap * (fixA ? 2 : 1); b.y += ny * overlap * (fixA ? 2 : 1); }
+
+      // Обмен скоростями вдоль нормали (упругий удар)
+      const dvx = b.vx - a.vx, dvy = b.vy - a.vy;
+      const dot = dvx * nx + dvy * ny;
+      if (dot >= 0) continue; // уже расходятся
+      const imp = dot * 0.85;
+      if (!fixA) { a.vx += imp * nx; a.vy += imp * ny; }
+      if (!fixB) { b.vx -= imp * nx; b.vy -= imp * ny; }
+
+      if (!fixA) clamp(a);
+      if (!fixB) clamp(b);
     }
   }
 }
@@ -77,10 +116,10 @@ function updateDOM() {
   });
 }
 
-function physicsLoop() {
-  resolveCollisions();
+function loop() {
+  physics();
   updateDOM();
-  animFrame = requestAnimationFrame(physicsLoop);
+  animFrame = requestAnimationFrame(loop);
 }
 
 // ── Рендер ──
@@ -105,17 +144,12 @@ function render() {
     inner.textContent = t.text;
     b.appendChild(inner);
 
-    // Клик — открыть детали (только если не было drag)
-    b.addEventListener('click', () => {
-      if ((b._moved || 0) < 6) openDetail(i);
-    });
+    b.addEventListener('click', () => { if ((b._moved || 0) < 6) openDetail(i); });
 
-    // Drag — мышь
     b.addEventListener('mousedown', e => {
       b._moved = 0;
       dragging = { idx: i, startMouseX: e.clientX, startMouseY: e.clientY, startTaskX: t.x, startTaskY: t.y };
       b.style.zIndex = 999;
-      b.style.transition = 'none';
       e.preventDefault();
     });
 
@@ -125,32 +159,37 @@ function render() {
 
   COLS.forEach(k => { document.getElementById(`cnt-${k}`).textContent = counts[k]; });
 
-  if (!animFrame) animFrame = requestAnimationFrame(physicsLoop);
+  if (!animFrame) animFrame = requestAnimationFrame(loop);
 }
 
-// ── Mouse events ──
+// ── Mouse drag ──
 document.addEventListener('mousemove', e => {
   if (!dragging) return;
   const dx = e.clientX - dragging.startMouseX;
   const dy = e.clientY - dragging.startMouseY;
-  const el = bubbleEls.get(tasks[dragging.idx]?.id);
+  const t  = tasks[dragging.idx];
+  const el = bubbleEls.get(t?.id);
   if (el) el._moved = Math.abs(dx) + Math.abs(dy);
-  tasks[dragging.idx].x = dragging.startTaskX + dx;
-  tasks[dragging.idx].y = dragging.startTaskY + dy;
-  clamp(tasks[dragging.idx]);
-  const r = CONFIG[tasks[dragging.idx].type].size / 2;
-  if (el) { el.style.left = (tasks[dragging.idx].x - r) + 'px'; el.style.top = (tasks[dragging.idx].y - r) + 'px'; }
+  t.x = dragging.startTaskX + dx;
+  t.y = dragging.startTaskY + dy;
+  const r = CONFIG[t.type].size / 2;
+  t.x = Math.max(r + 4, Math.min(window.innerWidth - r - 4, t.x));
+  t.y = Math.max(r + 60, Math.min(window.innerHeight - r - 90, t.y));
+  if (el) { el.style.left = (t.x - r) + 'px'; el.style.top = (t.y - r) + 'px'; }
 });
 
-document.addEventListener('mouseup', () => {
+document.addEventListener('mouseup', e => {
   if (!dragging) return;
-  const el = bubbleEls.get(tasks[dragging.idx]?.id);
-  if (el) { el.style.zIndex = ''; el.style.transition = ''; }
-  save();
-  dragging = null;
+  const t  = tasks[dragging.idx];
+  const el = bubbleEls.get(t?.id);
+  if (el) { el.style.zIndex = ''; }
+  // Придать импульс в направлении броска
+  t.vx = (e.clientX - dragging.startMouseX) * 0.04;
+  t.vy = (e.clientY - dragging.startMouseY) * 0.04;
+  save(); dragging = null;
 });
 
-// ── Touch events ──
+// ── Touch drag ──
 document.addEventListener('touchstart', e => {
   const b = e.target.closest('.bubble');
   if (!b) return;
@@ -168,28 +207,30 @@ document.addEventListener('touchmove', e => {
   const touch = e.touches[0];
   const dx = touch.clientX - dragging.startMouseX;
   const dy = touch.clientY - dragging.startMouseY;
-  const el = bubbleEls.get(tasks[dragging.idx]?.id);
+  const t  = tasks[dragging.idx];
+  const el = bubbleEls.get(t?.id);
   if (el) el._moved = Math.abs(dx) + Math.abs(dy);
-  tasks[dragging.idx].x = dragging.startTaskX + dx;
-  tasks[dragging.idx].y = dragging.startTaskY + dy;
-  clamp(tasks[dragging.idx]);
-  const r = CONFIG[tasks[dragging.idx].type].size / 2;
-  if (el) { el.style.left = (tasks[dragging.idx].x - r) + 'px'; el.style.top = (tasks[dragging.idx].y - r) + 'px'; }
+  t.x = dragging.startTaskX + dx;
+  t.y = dragging.startTaskY + dy;
+  const r = CONFIG[t.type].size / 2;
+  t.x = Math.max(r + 4, Math.min(window.innerWidth - r - 4, t.x));
+  t.y = Math.max(r + 60, Math.min(window.innerHeight - r - 90, t.y));
+  if (el) { el.style.left = (t.x - r) + 'px'; el.style.top = (t.y - r) + 'px'; }
 }, { passive: false });
 
-document.addEventListener('touchend', () => {
+document.addEventListener('touchend', e => {
   if (!dragging) return;
   const el = bubbleEls.get(tasks[dragging.idx]?.id);
   if (el) el.style.zIndex = '';
-  save();
-  dragging = null;
+  tasks[dragging.idx].vx = 0; tasks[dragging.idx].vy = 0;
+  save(); dragging = null;
 });
 
 // ── Модалка добавления ──
 function openModal(col) {
   activeCol = col;
   const cfg = CONFIG[col];
-  const ov = document.getElementById('modal');
+  const ov  = document.getElementById('modal');
   ov.style.setProperty('--modal-color', cfg.color);
   document.getElementById('modal-dot').style.cssText = `background:${cfg.color};box-shadow:0 0 10px ${cfg.color};`;
   document.getElementById('modal-title').textContent = cfg.label;
@@ -197,14 +238,14 @@ function openModal(col) {
   ov.classList.add('open');
   setTimeout(() => document.getElementById('task-text').focus(), 60);
 }
-function closeModal() { document.getElementById('modal').classList.remove('open'); activeCol = null; }
+function closeModal()    { document.getElementById('modal').classList.remove('open'); activeCol = null; }
 function closeOutside(e) { if (e.target.id === 'modal') closeModal(); }
 
 function saveTask() {
   const text = document.getElementById('task-text').value.trim();
   if (!text) return document.getElementById('task-text').focus();
   const pos = randPos(activeCol);
-  tasks.push({ id: Date.now(), type: activeCol, text, x: pos.x, y: pos.y, done: false });
+  tasks.push({ id: Date.now(), type: activeCol, text, x: pos.x, y: pos.y, done: false, vx: (Math.random()-0.5)*SPEED*2, vy: (Math.random()-0.5)*SPEED*2 });
   save(); render(); closeModal();
 }
 
@@ -223,20 +264,11 @@ function openDetail(i) {
   document.getElementById('detail-dot').style.cssText = `background:${cfg.color};box-shadow:0 0 10px ${cfg.color};`;
   document.getElementById('detail-type').textContent = cfg.label;
   document.getElementById('detail-text').textContent = t.text;
-  const btn = document.getElementById('btn-done');
-  btn.innerHTML = t.done
-    ? '<span class="material-symbols-rounded">undo</span>Снять отметку'
-    : '<span class="material-symbols-rounded">check_circle</span>Выполнено';
-  btn.classList.toggle('active', t.done);
   ov.classList.add('open');
 }
-function closeDetail() { document.getElementById('detail-modal').classList.remove('open'); detailIdx = null; }
+function closeDetail()         { document.getElementById('detail-modal').classList.remove('open'); detailIdx = null; }
 function closeDetailOutside(e) { if (e.target.id === 'detail-modal') closeDetail(); }
 
-function toggleDetailDone() {
-  tasks[detailIdx].done = !tasks[detailIdx].done;
-  save(); render(); openDetail(detailIdx);
-}
 function deleteDetail() {
   tasks.splice(detailIdx, 1);
   save(); render(); closeDetail();
