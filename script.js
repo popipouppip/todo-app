@@ -142,35 +142,31 @@ function randPos(type) {
   };
 }
 
-// ── Физика: прямая синусоида + очень мягкое отталкивание ──
+// ── Физика ──
 function physics() {
   const elapsed = (Date.now() - T0) * 0.001;
   const n = tasks.length;
 
-  // Позиция = прямо из синусоиды, без lerp — абсолютно плавно
+  // Синусоидальный дрейф — прямое вычисление, никакого lerp
   tasks.forEach((t, i) => {
     if (dragging?.idx === i) return;
-    t.x = t.baseX + Math.sin(elapsed * t.freq + t.phase)              * DRIFT;
-    t.y = t.baseY + Math.cos(elapsed * t.freq * 0.73 + t.phase + 1.4) * DRIFT * 0.8;
+    t.x = t.baseX + Math.sin(elapsed * t.freq + t.phase)        * DRIFT;
+    t.y = t.baseY + Math.cos(elapsed * t.freq * 0.73 + t.phase) * DRIFT * 0.8;
   });
 
-  // Очень медленное мягкое отталкивание baseX/baseY
+  // Отталкивание — двигаем baseX/baseY
   for (let i = 0; i < n; i++) {
     for (let j = i + 1; j < n; j++) {
       const a = tasks[i], b = tasks[j];
-      const ra = CONFIG[a.type].size / 2 + GAP;
-      const rb = CONFIG[b.type].size / 2 + GAP;
-      const minDist = ra + rb;
+      const minDist = CONFIG[a.type].size / 2 + CONFIG[b.type].size / 2 + GAP;
       const dx = b.x - a.x, dy = b.y - a.y;
-      const dist = Math.sqrt(dx*dx + dy*dy) || 0.001;
+      const dist = Math.sqrt(dx * dx + dy * dy) || 0.001;
       if (dist >= minDist) continue;
-
-      const push = (minDist - dist) * 0.12;
+      const push = (minDist - dist) * 0.3;
       const nx = dx / dist, ny = dy / dist;
-      const fixA = dragging?.idx === i;
-      const fixB = dragging?.idx === j;
-      if (!fixA) { a.baseX -= nx * push * (fixB ? 2 : 1); a.baseY -= ny * push * (fixB ? 2 : 1); clampBase(a); }
-      if (!fixB) { b.baseX += nx * push * (fixA ? 2 : 1); b.baseY += ny * push * (fixA ? 2 : 1); clampBase(b); }
+      const fA = dragging?.idx === i, fB = dragging?.idx === j;
+      if (!fA) { a.baseX -= nx * push * (fB ? 2 : 1); a.baseY -= ny * push * (fB ? 2 : 1); clampBase(a); }
+      if (!fB) { b.baseX += nx * push * (fA ? 2 : 1); b.baseY += ny * push * (fA ? 2 : 1); clampBase(b); }
     }
   }
 }
@@ -204,9 +200,9 @@ function render() {
 
     const b = document.createElement('div');
     const r = size / 2;
-    b.className = `bubble ${t.type}${t.done ? ' done' : ''} just-added`;
-    b.style.cssText = `width:${size}px;height:${size}px;--tx:${t.x - r}px;--ty:${t.y - r}px;transform:translate(${t.x - r}px,${t.y - r}px);`;
-    setTimeout(() => b.classList.remove('just-added'), 500);
+    b.className = `bubble ${t.type}${t.done ? ' done' : ''}`;
+    b.style.cssText = `width:${size}px;height:${size}px;opacity:0;transform:translate(${t.x-r}px,${t.y-r}px);`;
+    requestAnimationFrame(() => { b.style.opacity = '1'; });
 
     const inner = document.createElement('div');
     inner.className = 'bubble-inner';
