@@ -12,18 +12,10 @@
   <div class="stars" id="stars"></div>
 
   <div class="add-panel">
-    <button class="add-btn critical"  onclick="openModal('critical')">
-      <span class="material-symbols-rounded">local_fire_department</span>Сверхважная
-    </button>
-    <button class="add-btn important" onclick="openModal('important')">
-      <span class="material-symbols-rounded">bolt</span>Важная
-    </button>
-    <button class="add-btn low"       onclick="openModal('low')">
-      <span class="material-symbols-rounded">eco</span>Не очень
-    </button>
-    <button class="add-btn nodate"    onclick="openModal('nodate')">
-      <span class="material-symbols-rounded">schedule</span>Без срока
-    </button>
+    <button class="add-btn critical"  onclick="openModal('critical')"><span class="material-symbols-rounded">local_fire_department</span>Сверхважная</button>
+    <button class="add-btn important" onclick="openModal('important')"><span class="material-symbols-rounded">bolt</span>Важная</button>
+    <button class="add-btn low"       onclick="openModal('low')"><span class="material-symbols-rounded">eco</span>Не очень</button>
+    <button class="add-btn nodate"    onclick="openModal('nodate')"><span class="material-symbols-rounded">schedule</span>Без срока</button>
   </div>
 
   <div class="counters">
@@ -44,12 +36,8 @@
       </div>
       <textarea id="task-text" placeholder="Что нужно сделать?" rows="3"></textarea>
       <div class="modal-btns">
-        <button class="btn-cancel" onclick="closeModal()">
-          <span class="material-symbols-rounded">close</span>Отмена
-        </button>
-        <button class="btn-save" onclick="saveTask()">
-          <span class="material-symbols-rounded">add</span>Добавить
-        </button>
+        <button class="btn-cancel" onclick="closeModal()" title="Отмена"><span class="material-symbols-rounded">close</span></button>
+        <button class="btn-save"   onclick="saveTask()"  title="Добавить"><span class="material-symbols-rounded">add</span></button>
       </div>
     </div>
   </div>
@@ -63,12 +51,8 @@
       </div>
       <p class="detail-text" id="detail-text"></p>
       <div class="modal-btns">
-        <button class="btn-cancel" onclick="closeDetail()">
-          <span class="material-symbols-rounded">close</span>Закрыть
-        </button>
-        <button class="btn-delete" onclick="deleteDetail()">
-          <span class="material-symbols-rounded">delete</span>Удалить
-        </button>
+        <button class="btn-cancel" onclick="closeDetail()"  title="Закрыть"><span class="material-symbols-rounded">close</span></button>
+        <button class="btn-delete" onclick="deleteDetail()" title="Удалить"><span class="material-symbols-rounded">delete</span></button>
       </div>
     </div>
   </div>

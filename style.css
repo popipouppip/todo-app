@@ -177,18 +177,20 @@ body {
 
 /* Liquid glass кнопки в модалке */
 .btn-cancel, .btn-save, .btn-done, .btn-delete {
-  display: flex; align-items: center; gap: 6px;
-  border-radius: 14px; border: 1px solid; padding: 9px 16px;
-  font-size: 0.83rem; font-weight: 500; cursor: pointer; font-family: inherit;
+  display: flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px;
+  border-radius: 12px; border: 1px solid;
+  cursor: pointer; font-family: inherit;
   backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
   transition: background 0.18s, transform 0.15s;
   position: relative; overflow: hidden;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
 }
-.btn-cancel, .btn-save, .btn-done, .btn-delete { box-shadow: inset 0 1px 0 rgba(255,255,255,0.12); }
-.btn-cancel, .btn-save, .btn-done, .btn-delete::after {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 45%;
-  background: linear-gradient(rgba(255,255,255,0.06), transparent); pointer-events: none;
-}
+.btn-cancel, .btn-save, .btn-done, .btn-delete { }
+.btn-cancel .material-symbols-rounded,
+.btn-save .material-symbols-rounded,
+.btn-done .material-symbols-rounded,
+.btn-delete .material-symbols-rounded { font-size: 20px; }
 
 .btn-cancel {
   background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.12); color: #aaa;
@@ -196,9 +198,10 @@ body {
 .btn-cancel:hover { background: rgba(255,255,255,0.1); }
 
 .btn-save {
-  background: rgba(129,140,248,0.2); border-color: rgba(129,140,248,0.45); color: #c4b5fd;
+  background: color-mix(in srgb, var(--modal-color, #818cf8) 20%, transparent);
+  border-color: color-mix(in srgb, var(--modal-color, #818cf8) 50%, transparent);
+  color: white;
 }
-.btn-save { background: color-mix(in srgb, var(--modal-color, #818cf8) 20%, transparent); border-color: color-mix(in srgb, var(--modal-color, #818cf8) 50%, transparent); color: white; }
 .btn-save:hover { transform: translateY(-1px); background: color-mix(in srgb, var(--modal-color, #818cf8) 30%, transparent); }
 
 .btn-done {
