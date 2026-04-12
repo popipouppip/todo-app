@@ -1,3 +1,36 @@
+const POINTS = { critical: 4, important: 2.5, low: 1, nodate: 2 };
+const GOAL   = 10;
+
+let score = JSON.parse(localStorage.getItem('taskScore') || '{"pts":0,"games":0}');
+
+function saveScore() { localStorage.setItem('taskScore', JSON.stringify(score)); }
+
+function earnPoints(type) {
+  const pts = POINTS[type];
+  score.pts += pts;
+  let gained = 0;
+  while (score.pts >= GOAL) { score.pts -= GOAL; score.games++; gained++; }
+  saveScore();
+  updateScoreBar(gained > 0);
+  return pts;
+}
+
+function updateScoreBar(newGame = false) {
+  const pct = Math.min((score.pts / GOAL) * 100, 100);
+  const fill = document.getElementById('score-fill');
+  const pts  = document.getElementById('score-pts');
+  const gc   = document.getElementById('games-count');
+  fill.style.height = pct + '%';
+  fill.classList.toggle('full', score.pts === 0 && newGame);
+  pts.textContent   = score.pts % 1 === 0 ? score.pts : score.pts.toFixed(1);
+  gc.textContent    = score.games;
+  if (newGame) {
+    document.getElementById('score-games').classList.add('pulse');
+    setTimeout(() => document.getElementById('score-games').classList.remove('pulse'), 600);
+    fill.classList.remove('full');
+  }
+}
+
 const CONFIG = {
   critical:  { label: 'Сверхважная', color: '#ef4444', size: 115 },
   important: { label: 'Важная',       color: '#f59e0b', size: 95  },
@@ -264,7 +297,19 @@ function openDetail(i) {
   document.getElementById('detail-dot').style.cssText = `background:${cfg.color};box-shadow:0 0 10px ${cfg.color};`;
   document.getElementById('detail-type').textContent = cfg.label;
   document.getElementById('detail-text').textContent = t.text;
+  document.getElementById('detail-pts').textContent  = t.done ? '✓ Выполнено' : `+${POINTS[t.type]} очков за выполнение`;
+  const btn = document.getElementById('btn-done');
+  btn.classList.toggle('active', !!t.done);
   ov.classList.add('open');
+}
+
+function toggleDetailDone() {
+  const t = tasks[detailIdx];
+  if (!t.done) {
+    t.done = true;
+    earnPoints(t.type);
+    save(); render(); openDetail(detailIdx);
+  }
 }
 function closeDetail()         { document.getElementById('detail-modal').classList.remove('open'); detailIdx = null; }
 function closeDetailOutside(e) { if (e.target.id === 'detail-modal') closeDetail(); }
@@ -347,4 +392,5 @@ function explode(x, y, color, size, srcIdx) {
 
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeDetail(); } });
 
+updateScoreBar();
 render();

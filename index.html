@@ -27,6 +27,22 @@
 
   <div class="world" id="world"></div>
 
+  <!-- Боковая шкала очков -->
+  <div class="score-bar">
+    <div class="score-games" id="score-games" title="Доступно кататок">
+      <span class="material-symbols-rounded">sports_esports</span>
+      <span id="games-count">0</span>
+    </div>
+    <div class="score-track">
+      <div class="score-fill" id="score-fill"></div>
+      <div class="score-ticks">
+        <span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+    </div>
+    <div class="score-pts" id="score-pts">0</div>
+  </div>
+
   <!-- Добавить задачу -->
   <div class="modal-overlay" id="modal" onclick="closeOutside(event)">
     <div class="modal">
@@ -50,9 +66,11 @@
         <div class="detail-type" id="detail-type"></div>
       </div>
       <p class="detail-text" id="detail-text"></p>
+      <div class="detail-pts" id="detail-pts"></div>
       <div class="modal-btns">
-        <button class="btn-cancel" onclick="closeDetail()"  title="Закрыть"><span class="material-symbols-rounded">close</span></button>
-        <button class="btn-delete" onclick="deleteDetail()" title="Удалить"><span class="material-symbols-rounded">delete</span></button>
+        <button class="btn-cancel" onclick="closeDetail()"       title="Закрыть"><span class="material-symbols-rounded">close</span></button>
+        <button class="btn-done"   onclick="toggleDetailDone()"  title="Выполнено" id="btn-done"><span class="material-symbols-rounded">check_circle</span></button>
+        <button class="btn-delete" onclick="deleteDetail()"      title="Удалить"><span class="material-symbols-rounded">delete</span></button>
       </div>
     </div>
   </div>
