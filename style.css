@@ -78,17 +78,19 @@ body {
 .bubble {
   position: absolute; border-radius: 50%;
   display: flex; align-items: center; justify-content: center; text-align: center;
-  cursor: grab;
-  transition: box-shadow 0.3s;
-  animation: floatIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
-  will-change: left, top;
+  cursor: grab; left: 0; top: 0;
+  transition: box-shadow 0.3s, filter 0.2s;
+  will-change: transform;
 }
 .bubble:active { cursor: grabbing; }
-.bubble:hover { filter: brightness(1.12); }
+.bubble:hover { filter: brightness(1.15); }
 
+.bubble.just-added {
+  animation: floatIn 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
 @keyframes floatIn {
-  from { transform: scale(0); opacity: 0; }
-  to   { transform: scale(1); opacity: 1; }
+  from { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0); }
+  to   { opacity: 1; transform: translate(var(--tx), var(--ty)) scale(1); }
 }
 
 .bubble-inner {

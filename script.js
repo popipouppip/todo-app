@@ -165,7 +165,7 @@ function physics() {
       const dist = Math.sqrt(dx*dx + dy*dy) || 0.001;
       if (dist >= minDist) continue;
 
-      const push = (minDist - dist) * 0.025; // очень мягко
+      const push = (minDist - dist) * 0.12;
       const nx = dx / dist, ny = dy / dist;
       const fixA = dragging?.idx === i;
       const fixB = dragging?.idx === j;
@@ -180,8 +180,7 @@ function updateDOM() {
     const el = bubbleEls.get(t.id);
     if (!el || (dragging && tasks[dragging.idx]?.id === t.id)) return;
     const r = CONFIG[t.type].size / 2;
-    el.style.left = (t.x - r) + 'px';
-    el.style.top  = (t.y - r) + 'px';
+    el.style.transform = `translate(${t.x - r}px,${t.y - r}px)`;
   });
 }
 
@@ -204,8 +203,10 @@ function render() {
     const size = CONFIG[t.type].size;
 
     const b = document.createElement('div');
-    b.className = `bubble ${t.type}${t.done ? ' done' : ''}`;
-    b.style.cssText = `width:${size}px;height:${size}px;left:${t.x - size/2}px;top:${t.y - size/2}px;`;
+    const r = size / 2;
+    b.className = `bubble ${t.type}${t.done ? ' done' : ''} just-added`;
+    b.style.cssText = `width:${size}px;height:${size}px;--tx:${t.x - r}px;--ty:${t.y - r}px;transform:translate(${t.x - r}px,${t.y - r}px);`;
+    setTimeout(() => b.classList.remove('just-added'), 500);
 
     const inner = document.createElement('div');
     inner.className = 'bubble-inner';
@@ -242,11 +243,10 @@ document.addEventListener('mousemove', e => {
   t.baseX = dragging.startBaseX + dx;
   t.baseY = dragging.startBaseY + dy;
   clampBase(t);
-  // Мгновенно тоже двигаем чтобы не отставало
-  const r = CONFIG[t.type].size / 2;
   t.x = t.baseX;
   t.y = t.baseY;
-  if (el) { el.style.left = (t.x - r) + 'px'; el.style.top = (t.y - r) + 'px'; }
+  const r = CONFIG[t.type].size / 2;
+  if (el) el.style.transform = `translate(${t.x - r}px,${t.y - r}px)`;
 });
 
 document.addEventListener('mouseup', () => {
@@ -282,9 +282,9 @@ document.addEventListener('touchmove', e => {
   t.baseX = dragging.startBaseX + dx;
   t.baseY = dragging.startBaseY + dy;
   clampBase(t);
-  const r = CONFIG[t.type].size / 2;
   t.x = t.baseX; t.y = t.baseY;
-  if (el) { el.style.left = (t.x - r) + 'px'; el.style.top = (t.y - r) + 'px'; }
+  const r2 = CONFIG[t.type].size / 2;
+  if (el) el.style.transform = `translate(${t.x - r2}px,${t.y - r2}px)`;
 }, { passive: false });
 
 document.addEventListener('touchend', () => {
