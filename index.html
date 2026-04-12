@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Задачник</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Мои задачи</h1>
+    <span class="date" id="today"></span>
+  </header>
+
+  <main class="board">
+    <!-- Колонка 1 -->
+    <div class="column" data-col="critical">
+      <div class="col-header critical">
+        <span class="col-icon">🔥</span>
+        <h2>Сверхважные</h2>
+        <span class="count" id="count-critical">0</span>
+      </div>
+      <div class="tasks" id="tasks-critical"></div>
+      <button class="add-btn" onclick="openModal('critical')">+ Добавить</button>
+    </div>
+
+    <!-- Колонка 2 -->
+    <div class="column" data-col="important">
+      <div class="col-header important">
+        <span class="col-icon">⚡</span>
+        <h2>Важные</h2>
+        <span class="count" id="count-important">0</span>
+      </div>
+      <div class="tasks" id="tasks-important"></div>
+      <button class="add-btn" onclick="openModal('important')">+ Добавить</button>
+    </div>
+
+    <!-- Колонка 3 -->
+    <div class="column" data-col="low">
+      <div class="col-header low">
+        <span class="col-icon">🌿</span>
+        <h2>Не очень важные</h2>
+        <span class="count" id="count-low">0</span>
+      </div>
+      <div class="tasks" id="tasks-low"></div>
+      <button class="add-btn" onclick="openModal('low')">+ Добавить</button>
+    </div>
+
+    <!-- Колонка 4 -->
+    <div class="column" data-col="nodate">
+      <div class="col-header nodate">
+        <span class="col-icon">🕐</span>
+        <h2>Без срока</h2>
+        <span class="count" id="count-nodate">0</span>
+      </div>
+      <div class="tasks" id="tasks-nodate"></div>
+      <button class="add-btn" onclick="openModal('nodate')">+ Добавить</button>
+    </div>
+  </main>
+
+  <!-- Модалка -->
+  <div class="modal-overlay" id="modal" onclick="closeModalOutside(event)">
+    <div class="modal">
+      <h3 id="modal-title">Новая задача</h3>
+      <textarea id="task-text" placeholder="Текст задачи..." rows="3"></textarea>
+      <input type="date" id="task-date">
+      <div class="modal-btns">
+        <button class="btn-cancel" onclick="closeModal()">Отмена</button>
+        <button class="btn-save" onclick="saveTask()">Добавить</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
