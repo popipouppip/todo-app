@@ -12,7 +12,59 @@ function earnPoints(type) {
   while (score.pts >= GOAL) { score.pts -= GOAL; score.games++; gained++; }
   saveScore();
   updateScoreBar(gained > 0);
+  if (gained > 0) supernovaExplosion();
   return pts;
+}
+
+function supernovaExplosion() {
+  const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+  const colors = ['#ef4444', '#f59e0b', '#fbbf24', '#ff6b35', '#fff'];
+
+  // Вспышка экрана
+  const flash = document.createElement('div');
+  flash.className = 'sn-screen-flash';
+  document.body.appendChild(flash);
+  setTimeout(() => flash.remove(), 650);
+
+  // 6 колец с задержкой
+  colors.forEach((c, i) => {
+    setTimeout(() => {
+      const r = document.createElement('div');
+      r.className = 'sn-ring';
+      r.style.cssText = `left:${cx}px;top:${cy}px;width:${80+i*40}px;height:${80+i*40}px;--c:${c};--dur:${0.75+i*0.08}s;`;
+      document.body.appendChild(r);
+      setTimeout(() => r.remove(), 1100);
+    }, i * 70);
+  });
+
+  // 60 частиц
+  for (let i = 0; i < 60; i++) {
+    const p = document.createElement('div');
+    p.className = 'expl-particle';
+    const angle = (i / 60) * 360 + Math.random() * 6;
+    const dist  = 180 + Math.random() * 350;
+    const sz    = 3 + Math.random() * 9;
+    const c     = colors[Math.floor(Math.random() * colors.length)];
+    const dur   = 0.6 + Math.random() * 0.7;
+    p.style.cssText = `left:${cx}px;top:${cy}px;width:${sz}px;height:${sz}px;--c:${c};--a:${angle}deg;--dist:${dist}px;--dur:${dur}s;`;
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), dur * 1000 + 50);
+  }
+
+  // Надпись RAMPAGE
+  const ov = document.createElement('div');
+  ov.className = 'rampage-overlay';
+  ov.innerHTML = '<span class="rampage-text">RAMPAGE!!!</span>';
+  document.body.appendChild(ov);
+  setTimeout(() => ov.remove(), 2500);
+
+  // Разбросать шарики
+  tasks.forEach(t => {
+    const dx = t.x - cx, dy = t.y - cy;
+    const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+    t.vx += (dx / dist) * 10;
+    t.vy += (dy / dist) * 10;
+  });
 }
 
 function updateScoreBar(newGame = false) {
