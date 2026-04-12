@@ -92,8 +92,7 @@ const CONFIG = {
 };
 const COLS   = Object.keys(CONFIG);
 const GAP    = 10;   // зазор между шариками
-const DRIFT  = 22;   // радиус плавного дрейфа (px)
-const LERP   = 0.028; // сглаживание (меньше = плавнее)
+const DRIFT  = 16;   // радиус плавного дрейфа (px)
 
 let tasks     = JSON.parse(localStorage.getItem('bubbleTasks') || '[]');
 let activeCol = null;
@@ -109,7 +108,7 @@ function initDrift(t) {
   if (t.baseX === undefined) t.baseX = t.x;
   if (t.baseY === undefined) t.baseY = t.y;
   if (t.phase === undefined) t.phase = Math.random() * Math.PI * 2;
-  if (t.freq  === undefined) t.freq  = 0.18 + Math.random() * 0.14;
+  if (t.freq  === undefined) t.freq  = 0.06 + Math.random() * 0.06;
 }
 
 // ── Звёзды ──
@@ -143,21 +142,19 @@ function randPos(type) {
   };
 }
 
-// ── Физика: плавный drift + мягкое отталкивание ──
+// ── Физика: прямая синусоида + очень мягкое отталкивание ──
 function physics() {
   const elapsed = (Date.now() - T0) * 0.001;
   const n = tasks.length;
 
-  // Плавный синусоидальный дрейф с lerp
+  // Позиция = прямо из синусоиды, без lerp — абсолютно плавно
   tasks.forEach((t, i) => {
     if (dragging?.idx === i) return;
-    const tx = t.baseX + Math.sin(elapsed * t.freq + t.phase)        * DRIFT;
-    const ty = t.baseY + Math.cos(elapsed * t.freq * 0.7 + t.phase + 1.3) * DRIFT * 0.75;
-    t.x += (tx - t.x) * LERP;
-    t.y += (ty - t.y) * LERP;
+    t.x = t.baseX + Math.sin(elapsed * t.freq + t.phase)              * DRIFT;
+    t.y = t.baseY + Math.cos(elapsed * t.freq * 0.73 + t.phase + 1.4) * DRIFT * 0.8;
   });
 
-  // Мягкое отталкивание — двигаем baseX/baseY, не позицию напрямую
+  // Очень медленное мягкое отталкивание baseX/baseY
   for (let i = 0; i < n; i++) {
     for (let j = i + 1; j < n; j++) {
       const a = tasks[i], b = tasks[j];
@@ -168,7 +165,7 @@ function physics() {
       const dist = Math.sqrt(dx*dx + dy*dy) || 0.001;
       if (dist >= minDist) continue;
 
-      const push = (minDist - dist) * 0.15;
+      const push = (minDist - dist) * 0.025; // очень мягко
       const nx = dx / dist, ny = dy / dist;
       const fixA = dragging?.idx === i;
       const fixB = dragging?.idx === j;
