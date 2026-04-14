@@ -59,13 +59,11 @@ function supernovaExplosion() {
   document.body.appendChild(ov);
   setTimeout(() => ov.remove(), 2500);
 
-  // Разбросать шарики — сдвигаем базовые позиции
   tasks.forEach(t => {
     const dx = t.x - cx, dy = t.y - cy;
     const dist = Math.sqrt(dx*dx + dy*dy) || 1;
-    t.baseX += (dx / dist) * 120;
-    t.baseY += (dy / dist) * 120;
-    clampBase(t);
+    t.vx += (dx / dist) * 10;
+    t.vy += (dy / dist) * 10;
   });
 }
 
@@ -91,25 +89,19 @@ const CONFIG = {
   nodate:    { label: 'Без срока',    color: '#818cf8', size: 72  },
 };
 const COLS   = Object.keys(CONFIG);
-const GAP    = 10;   // зазор между шариками
-const DRIFT  = 16;   // радиус плавного дрейфа (px)
+const GAP    = 8;
+const SPEED  = 0.4;
+const DAMP   = 0.994;
 
 let tasks     = JSON.parse(localStorage.getItem('bubbleTasks') || '[]');
 let activeCol = null;
 let dragging  = null;
 let bubbleEls = new Map();
 let animFrame = null;
-const T0      = Date.now();
 
-// Инициализируем параметры дрейфа для существующих задач
-tasks.forEach(initDrift);
-
-function initDrift(t) {
-  if (t.baseX === undefined) t.baseX = t.x;
-  if (t.baseY === undefined) t.baseY = t.y;
-  if (t.phase === undefined) t.phase = Math.random() * Math.PI * 2;
-  if (t.freq  === undefined) t.freq  = 0.06 + Math.random() * 0.06;
-}
+tasks.forEach(t => {
+  if (t.vx === undefined) { t.vx = (Math.random() - 0.5) * SPEED; t.vy = (Math.random() - 0.5) * SPEED; }
+});
 
 // ── Звёзды ──
 (function () {
@@ -124,49 +116,63 @@ function initDrift(t) {
 })();
 
 function save() {
-  const clean = tasks.map(({ baseX, baseY, phase, freq, ...rest }) => rest);
+  const clean = tasks.map(({ vx, vy, ...rest }) => rest);
   localStorage.setItem('bubbleTasks', JSON.stringify(clean));
 }
 
-function clampBase(t) {
-  const r = CONFIG[t.type].size / 2 + DRIFT + 8;
-  t.baseX = Math.max(r, Math.min(window.innerWidth  - r, t.baseX));
-  t.baseY = Math.max(r + 55, Math.min(window.innerHeight - r - 85, t.baseY));
+function clamp(t) {
+  const r = CONFIG[t.type].size / 2;
+  const pad = 6;
+  if (t.x < r + pad)                    { t.x = r + pad;                    t.vx =  Math.abs(t.vx) * 0.6; }
+  if (t.x > window.innerWidth  - r-pad) { t.x = window.innerWidth  - r-pad; t.vx = -Math.abs(t.vx) * 0.6; }
+  if (t.y < r + 65)                     { t.y = r + 65;                     t.vy =  Math.abs(t.vy) * 0.6; }
+  if (t.y > window.innerHeight - r-90)  { t.y = window.innerHeight - r-90;  t.vy = -Math.abs(t.vy) * 0.6; }
 }
 
 function randPos(type) {
-  const r = CONFIG[type].size / 2 + DRIFT + 10;
+  const r = CONFIG[type].size / 2;
   return {
-    x: r + Math.random() * (window.innerWidth  - r * 2),
-    y: r + 60 + Math.random() * (window.innerHeight - r * 2 - 110),
+    x: r + 40 + Math.random() * (window.innerWidth  - (r + 40) * 2),
+    y: r + 80 + Math.random() * (window.innerHeight - (r + 80) - 120),
   };
 }
 
 // ── Физика ──
 function physics() {
-  const elapsed = (Date.now() - T0) * 0.001;
   const n = tasks.length;
 
-  // Синусоидальный дрейф — прямое вычисление, никакого lerp
   tasks.forEach((t, i) => {
     if (dragging?.idx === i) return;
-    t.x = t.baseX + Math.sin(elapsed * t.freq + t.phase)        * DRIFT;
-    t.y = t.baseY + Math.cos(elapsed * t.freq * 0.73 + t.phase) * DRIFT * 0.8;
+    t.x += t.vx;
+    t.y += t.vy;
+    t.vx *= DAMP;
+    t.vy *= DAMP;
+    if (Math.random() < 0.005) { t.vx += (Math.random() - 0.5) * 0.25; t.vy += (Math.random() - 0.5) * 0.25; }
+    clamp(t);
   });
 
-  // Отталкивание — двигаем baseX/baseY
   for (let i = 0; i < n; i++) {
     for (let j = i + 1; j < n; j++) {
       const a = tasks[i], b = tasks[j];
-      const minDist = CONFIG[a.type].size / 2 + CONFIG[b.type].size / 2 + GAP;
+      const minDist = CONFIG[a.type].size/2 + CONFIG[b.type].size/2 + GAP;
       const dx = b.x - a.x, dy = b.y - a.y;
-      const dist = Math.sqrt(dx * dx + dy * dy) || 0.001;
+      const dist = Math.sqrt(dx*dx + dy*dy) || 0.001;
       if (dist >= minDist) continue;
-      const push = (minDist - dist) * 0.3;
-      const nx = dx / dist, ny = dy / dist;
+
+      const overlap = (minDist - dist) * 0.5;
+      const nx = dx/dist, ny = dy/dist;
       const fA = dragging?.idx === i, fB = dragging?.idx === j;
-      if (!fA) { a.baseX -= nx * push * (fB ? 2 : 1); a.baseY -= ny * push * (fB ? 2 : 1); clampBase(a); }
-      if (!fB) { b.baseX += nx * push * (fA ? 2 : 1); b.baseY += ny * push * (fA ? 2 : 1); clampBase(b); }
+      if (!fA) { a.x -= nx*overlap*(fB?2:1); a.y -= ny*overlap*(fB?2:1); }
+      if (!fB) { b.x += nx*overlap*(fA?2:1); b.y += ny*overlap*(fA?2:1); }
+
+      const dvx = b.vx - a.vx, dvy = b.vy - a.vy;
+      const dot = dvx*nx + dvy*ny;
+      if (dot >= 0) continue;
+      const imp = dot * 0.8;
+      if (!fA) { a.vx += imp*nx; a.vy += imp*ny; }
+      if (!fB) { b.vx -= imp*nx; b.vy -= imp*ny; }
+      if (!fA) clamp(a);
+      if (!fB) clamp(b);
     }
   }
 }
@@ -214,7 +220,7 @@ function render() {
 
     b.addEventListener('mousedown', e => {
       b._moved = 0;
-      dragging = { idx: i, startMouseX: e.clientX, startMouseY: e.clientY, startBaseX: t.baseX, startBaseY: t.baseY };
+      dragging = { idx: i, startMouseX: e.clientX, startMouseY: e.clientY, startX: t.x, startY: t.y };
       b.style.zIndex = 999;
       e.preventDefault();
     });
@@ -235,23 +241,21 @@ document.addEventListener('mousemove', e => {
   const t  = tasks[dragging.idx];
   const el = bubbleEls.get(t?.id);
   if (el) el._moved = Math.abs(dx) + Math.abs(dy);
-  // Двигаем base — позиция плавно подтянется через lerp
-  t.baseX = dragging.startBaseX + dx;
-  t.baseY = dragging.startBaseY + dy;
-  clampBase(t);
-  t.x = t.baseX;
-  t.y = t.baseY;
+  t.x = dragging.startX + dx;
+  t.y = dragging.startY + dy;
+  clamp(t);
   const r = CONFIG[t.type].size / 2;
   if (el) el.style.transform = `translate(${t.x - r}px,${t.y - r}px)`;
 });
 
-document.addEventListener('mouseup', () => {
+document.addEventListener('mouseup', e => {
   if (!dragging) return;
   const t  = tasks[dragging.idx];
   const el = bubbleEls.get(t?.id);
   if (el) el.style.zIndex = '';
-  save();
-  dragging = null;
+  t.vx = (e.clientX - dragging.startMouseX) * 0.05;
+  t.vy = (e.clientY - dragging.startMouseY) * 0.05;
+  save(); dragging = null;
 });
 
 // ── Touch drag ──
@@ -262,7 +266,7 @@ document.addEventListener('touchstart', e => {
   if (idx < 0) return;
   b._moved = 0;
   const touch = e.touches[0];
-  dragging = { idx, startMouseX: touch.clientX, startMouseY: touch.clientY, startBaseX: tasks[idx].baseX, startBaseY: tasks[idx].baseY };
+  dragging = { idx, startMouseX: touch.clientX, startMouseY: touch.clientY, startX: tasks[idx].x, startY: tasks[idx].y };
   b.style.zIndex = 999;
 }, { passive: true });
 
@@ -275,18 +279,17 @@ document.addEventListener('touchmove', e => {
   const t  = tasks[dragging.idx];
   const el = bubbleEls.get(t?.id);
   if (el) el._moved = Math.abs(dx) + Math.abs(dy);
-  t.baseX = dragging.startBaseX + dx;
-  t.baseY = dragging.startBaseY + dy;
-  clampBase(t);
-  t.x = t.baseX; t.y = t.baseY;
-  const r2 = CONFIG[t.type].size / 2;
-  if (el) el.style.transform = `translate(${t.x - r2}px,${t.y - r2}px)`;
+  t.x = dragging.startX + dx; t.y = dragging.startY + dy;
+  clamp(t);
+  const r = CONFIG[t.type].size / 2;
+  if (el) el.style.transform = `translate(${t.x - r}px,${t.y - r}px)`;
 }, { passive: false });
 
 document.addEventListener('touchend', () => {
   if (!dragging) return;
   const el = bubbleEls.get(tasks[dragging.idx]?.id);
   if (el) el.style.zIndex = '';
+  tasks[dragging.idx].vx = 0; tasks[dragging.idx].vy = 0;
   save(); dragging = null;
 });
 
@@ -309,8 +312,8 @@ function saveTask() {
   const text = document.getElementById('task-text').value.trim();
   if (!text) return document.getElementById('task-text').focus();
   const pos = randPos(activeCol);
-  const t = { id: Date.now(), type: activeCol, text, x: pos.x, y: pos.y, done: false };
-  initDrift(t);
+  const t = { id: Date.now(), type: activeCol, text, x: pos.x, y: pos.y, done: false,
+    vx: (Math.random()-0.5)*SPEED, vy: (Math.random()-0.5)*SPEED };
   tasks.push(t);
   save(); render(); closeModal();
 }
@@ -363,15 +366,13 @@ function deleteDetail() {
 
 // ── Взрыв ──
 function explode(x, y, color, size, srcIdx) {
-  // Ударная волна — сдвигаем базовые позиции
   tasks.forEach((t, i) => {
     if (i === srcIdx) return;
     const dx = t.x - x, dy = t.y - y;
     const dist = Math.sqrt(dx*dx + dy*dy) || 1;
-    const force = Math.min((size * 160) / (dist * dist), 80);
-    t.baseX += (dx / dist) * force;
-    t.baseY += (dy / dist) * force;
-    clampBase(t);
+    const force = Math.min((size * 180) / (dist * dist), 5);
+    t.vx += (dx / dist) * force;
+    t.vy += (dy / dist) * force;
   });
 
   const ring = document.createElement('div');
