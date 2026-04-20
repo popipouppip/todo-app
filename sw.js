@@ -1,4 +1,4 @@
-const CACHE = 'zadachnik-v1';
+const CACHE = 'zadachnik-v2';
 const FILES = ['/', '/index.html', '/style.css', '/script.js', '/manifest.json'];
 
 self.addEventListener('install', e => {
