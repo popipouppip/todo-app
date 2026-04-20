@@ -1,7 +1,14 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-  background: #08080f;
+  background: linear-gradient(to bottom,
+    #6ec5e9 0%,
+    #9bd7f0 28%,
+    #cfeaf5 46%,
+    #63b4d6 52%,
+    #2e87b5 65%,
+    #155a8a 82%,
+    #0a3352 100%);
   overflow: hidden;
   height: 100vh;
   width: 100vw;
@@ -12,13 +19,93 @@ body {
 
 .material-symbols-rounded { font-size: 18px; line-height: 1; flex-shrink: 0; }
 
-/* Звёзды */
-.stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
-.star {
-  position: absolute; border-radius: 50%; background: #fff; opacity: 0.15;
-  animation: twinkle var(--dur, 3s) ease-in-out infinite alternate;
+/* ── Солнце ── */
+.sun {
+  position: fixed;
+  top: 18%; left: 72%;
+  width: 130px; height: 130px;
+  border-radius: 50%;
+  background: radial-gradient(circle,
+    #fffbe0 0%,
+    #ffe89a 38%,
+    rgba(255,210,130,0.4) 60%,
+    rgba(255,190,100,0) 75%);
+  pointer-events: none;
+  z-index: 0;
+  animation: sun-pulse 4s ease-in-out infinite alternate;
+  filter: blur(0.5px);
 }
-@keyframes twinkle { to { opacity: 0.5; } }
+@keyframes sun-pulse {
+  from { opacity: 0.9;  transform: scale(1); }
+  to   { opacity: 1;    transform: scale(1.06); }
+}
+
+/* ── Облака ── */
+.clouds { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+.cloud {
+  position: absolute;
+  width: 70px; height: 26px;
+  background: #fff;
+  border-radius: 50px;
+  opacity: 0.92;
+  filter: blur(0.6px) drop-shadow(0 6px 10px rgba(30,80,120,0.15));
+  animation: cloud-drift var(--dur, 80s) linear infinite;
+}
+.cloud::before, .cloud::after {
+  content: '';
+  position: absolute;
+  background: #fff;
+  border-radius: 50%;
+}
+.cloud::before {
+  width: 32px; height: 32px;
+  top: -16px; left: 12px;
+}
+.cloud::after {
+  width: 46px; height: 46px;
+  top: -24px; left: 28px;
+}
+@keyframes cloud-drift {
+  from { transform: translateX(-220px) scale(var(--s, 1)); }
+  to   { transform: translateX(calc(100vw + 220px)) scale(var(--s, 1)); }
+}
+
+/* ── Океан и волны ── */
+.ocean {
+  position: fixed;
+  left: 0; right: 0; top: 48%; bottom: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.wave {
+  position: absolute;
+  left: -50%; width: 200%; height: 18px;
+  background-repeat: repeat-x;
+  background-size: 220px 18px;
+}
+.wave-1 {
+  top: 4%;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 18'><path d='M0 10 Q 27 2 55 10 T 110 10 T 165 10 T 220 10' stroke='rgba(255,255,255,0.85)' stroke-width='2.2' fill='none' stroke-linecap='round'/></svg>");
+  animation: wave-flow 7s linear infinite;
+}
+.wave-2 {
+  top: 16%;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 18'><path d='M0 10 Q 27 4 55 10 T 110 10 T 165 10 T 220 10' stroke='rgba(255,255,255,0.6)' stroke-width='1.6' fill='none' stroke-linecap='round'/></svg>");
+  animation: wave-flow-rev 11s linear infinite;
+}
+.wave-3 {
+  top: 32%;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 18'><path d='M0 10 Q 27 6 55 10 T 110 10 T 165 10 T 220 10' stroke='rgba(255,255,255,0.4)' stroke-width='1.3' fill='none' stroke-linecap='round'/></svg>");
+  animation: wave-flow 15s linear infinite;
+}
+.wave-4 {
+  top: 52%;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 18'><path d='M0 10 Q 27 7 55 10 T 110 10 T 165 10 T 220 10' stroke='rgba(255,255,255,0.25)' stroke-width='1' fill='none' stroke-linecap='round'/></svg>");
+  animation: wave-flow-rev 22s linear infinite;
+}
+@keyframes wave-flow     { from { transform: translateX(0); } to { transform: translateX(220px); } }
+@keyframes wave-flow-rev { from { transform: translateX(0); } to { transform: translateX(-220px); } }
 
 .world { position: fixed; inset: 0; z-index: 1; overflow: hidden; }
 

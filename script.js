@@ -103,15 +103,18 @@ tasks.forEach(t => {
   if (t.vx === undefined) { t.vx = (Math.random() - 0.5) * SPEED; t.vy = (Math.random() - 0.5) * SPEED; }
 });
 
-// ── Звёзды ──
+// ── Облака ──
 (function () {
-  const el = document.getElementById('stars');
-  for (let i = 0; i < 120; i++) {
-    const s = document.createElement('div');
-    s.className = 'star';
-    const sz = Math.random() * 2.5 + 0.5;
-    s.style.cssText = `width:${sz}px;height:${sz}px;top:${Math.random()*100}%;left:${Math.random()*100}%;--dur:${2+Math.random()*4}s`;
-    el.appendChild(s);
+  const el = document.getElementById('clouds');
+  for (let i = 0; i < 9; i++) {
+    const c = document.createElement('div');
+    c.className = 'cloud';
+    const scale = 0.7 + Math.random() * 1.4;
+    const top   = Math.random() * 38;
+    const dur   = 60 + Math.random() * 70;
+    const delay = -Math.random() * dur;
+    c.style.cssText = `top:${top}%;--s:${scale};--dur:${dur}s;animation-delay:${delay}s;opacity:${0.7 + Math.random() * 0.25}`;
+    el.appendChild(c);
   }
 })();
 
